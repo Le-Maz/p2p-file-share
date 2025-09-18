@@ -2,8 +2,7 @@
 
 use std::ops::Deref;
 
-use anyhow::anyhow;
-use iroh::{SecretKey, Watcher};
+use iroh::Watcher;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -16,25 +15,8 @@ impl Endpoint {
         Ok(Endpoint(endpoint))
     }
 
-    pub async fn new_with_secret_key(secret_key: Vec<u8>) -> Result<Endpoint, AnyhowError> {
-        let secret_key = secret_key
-            .as_array()
-            .ok_or(anyhow!("Bad secret key"))
-            .map_err(AnyhowError)?;
-        let endpoint = iroh::Endpoint::builder()
-            .discovery_n0()
-            .secret_key(SecretKey::from_bytes(secret_key))
-            .bind()
-            .await?;
-        Ok(Endpoint(endpoint))
-    }
-
     pub fn node_id(&self) -> String {
         self.0.node_id().to_string()
-    }
-
-    pub fn secret_key(&self) -> Vec<u8> {
-        self.0.secret_key().to_bytes().to_vec()
     }
 
     pub async fn initialized(&self) {

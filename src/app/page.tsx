@@ -14,18 +14,7 @@ export default function Home() {
   useEffect(() => {
     (async () => {
       const { Endpoint } = await import("../../iroh-wrapper/pkg/iroh_wrapper");
-      const secretKeyEncoded = localStorage.getItem("secret-key");
-      let endpoint;
-      if (secretKeyEncoded === null) {
-        endpoint = await Endpoint.new();
-        const secretKey = endpoint.secret_key();
-        // @ts-ignore
-        localStorage.setItem("secret-key", secretKey.toBase64());
-      } else {
-        // @ts-ignore
-        const secretKey = Uint8Array.fromBase64(secretKeyEncoded);
-        endpoint = await Endpoint.new_with_secret_key(secretKey);
-      }
+      const endpoint = await Endpoint.new();
       setEndpoint(endpoint);
       await endpoint.initialized();
       setInitialized(true);
