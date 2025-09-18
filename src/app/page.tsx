@@ -18,7 +18,19 @@ export default function Home() {
       await endpoint.initialized();
       setEndpoint(endpoint);
       endpoint.listen(async (conn: Connection) => {
-        console.log(conn.peer_connection);
+        conn.peer_connection.createDataChannel("something");
+        let name: string;
+        conn.data_channel.onmessage = (message) => {
+          if (typeof message.data === "string") {
+            name = message.data;
+            conn.data_channel.send("PONG");
+          } else {
+            const anchor = document.createElement("a");
+            anchor.download = name;
+            anchor.href = URL.createObjectURL(message.data as Blob);
+            anchor.click();
+          }
+        };
       });
     })();
     return () => {
@@ -34,34 +46,22 @@ export default function Home() {
     <div>
       <h3>Node ID: {endpoint.node_id()}</h3>
 
-      <h3>Seeded files:</h3>
-      <ul>
-        {fileList.map((file, index) => (
-          <li key={index}>{file.name}</li>
-        ))}
-      </ul>
-
       <form
-        action={(formData) => {
-          const addedFile = formData.get("file");
-          if (addedFile instanceof File) {
-            setFileList(fileList.concat(addedFile));
-          }
+        action={async (formData) => {
+          const addedPeer = formData.get("peer_id") as string;
+          const file = formData.get("file") as File;
+          const conn: Connection = await endpoint?.connect(addedPeer);
+          const pingInterval = setInterval(
+            () => conn.data_channel.send(file.name),
+            300
+          );
+          conn.data_channel.onmessage = async (message) => {
+            clearInterval(pingInterval);
+            conn.data_channel.send(await file.arrayBuffer());
+          };
         }}
       >
         <input type="file" name="file" id="file" />
-        <button type="submit">Submit</button>
-      </form>
-
-      <form
-        action={async (formData) => {
-          const addedPeer = formData.get("peer_id");
-          if (typeof addedPeer === "string") {
-            const conn: Connection = await endpoint?.connect(addedPeer);
-            console.log(conn.peer_connection);
-          }
-        }}
-      >
         <input type="text" name="peer_id" id="peer_id" />
         <button type="submit">Submit</button>
       </form>

@@ -14,7 +14,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::{js_sys::Function, spawn_local};
 use web_sys::{
     RtcDataChannel, RtcIceCandidate, RtcIceCandidateInit, RtcPeerConnection, RtcSessionDescription,
-    RtcSessionDescriptionInit, console,
+    RtcSessionDescriptionInit,
 };
 
 use crate::{
@@ -67,8 +67,6 @@ impl Endpoint {
         let answer = rtc.create_answer().await?;
         channel.send_session_description(&answer).await?;
 
-        debug("Exchanged session descriptions");
-
         while let Some(ice_candidate) = channel.receive_ice_candidate().await? {
             rtc.add_ice_candidate(Some(&ice_candidate)).await?;
         }
@@ -76,14 +74,10 @@ impl Endpoint {
 
         while let Some(ice_candidate) = ice_candidate_stream.recv().await {
             channel.send_ice_candidate(&ice_candidate).await?;
-            console::debug_2(&"Sent ICE candidate".into(), &ice_candidate);
         }
         channel.stop_writing().await?;
 
-        debug("Exchanged ICE candidates");
-
         let data_channel = data_channel.await?;
-        debug("Got a data channel");
 
         on_connect
             .call1(
@@ -129,11 +123,8 @@ impl Endpoint {
         let answer = channel.receive_session_description().await?;
         rtc.set_remote_description(answer).await?;
 
-        debug("Exchanged session descriptions");
-
         while let Some(ice_candidate) = ice_candidate_stream.recv().await {
             channel.send_ice_candidate(&ice_candidate).await?;
-            console::debug_2(&"Sent ICE candidate".into(), &ice_candidate);
         }
         channel.stop_writing().await?;
 
@@ -141,8 +132,6 @@ impl Endpoint {
             rtc.add_ice_candidate(Some(&ice_candidate)).await?;
         }
         rtc.add_ice_candidate(None).await?;
-
-        debug("Exchanged ICE candidates");
 
         Ok(Connection {
             peer_connection: rtc.into_inner(),
@@ -224,8 +213,4 @@ impl Channel {
         };
         Ok(Some(JSON::parse(&offer_json).js_anyhow()?.into()))
     }
-}
-
-pub fn debug(text: &str) {
-    console::debug_1(&text.into());
 }

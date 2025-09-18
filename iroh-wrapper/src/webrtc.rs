@@ -11,10 +11,7 @@ use web_sys::{
     RtcSessionDescription, RtcSessionDescriptionInit,
 };
 
-use crate::{
-    debug,
-    js_anyhow::{AnyhowError, JsAnyhow},
-};
+use crate::js_anyhow::{AnyhowError, JsAnyhow};
 
 pub struct WebRtcConnection {
     inner: RtcPeerConnection,
@@ -106,7 +103,6 @@ impl WebRtcConnection {
         let candidate_send_clone = candidate_send.clone();
         let ice_candidate_handler = Closure::<dyn Fn(RtcPeerConnectionIceEvent)>::new(
             move |event: RtcPeerConnectionIceEvent| {
-                debug("ICE candidate");
                 let Some(candidate) = event.candidate() else {
                     connection.set_onicecandidate(None);
                     connection.set_onicegatheringstatechange(None);
@@ -121,7 +117,6 @@ impl WebRtcConnection {
         );
         let connection = self.inner.clone();
         let ice_gathering_state_change_handler = Closure::<dyn Fn()>::new(move || {
-            debug("ICE gathering state changed");
             if connection.ice_gathering_state() == RtcIceGatheringState::Complete {
                 connection.set_onicecandidate(None);
                 connection.set_onicegatheringstatechange(None);
