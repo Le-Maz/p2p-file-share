@@ -1,95 +1,45 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import { useEffect, useState } from "react";
+import type { Endpoint } from "../../iroh-wrapper/pkg/iroh_wrapper";
+
+function Loading() {
+  return <div>Loading...</div>;
+}
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [endpoint, setEndpoint] = useState<Endpoint>();
+  const [initialized, setInitialized] = useState<boolean>(false);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  useEffect(() => {
+    (async () => {
+      const { Endpoint } = await import("../../iroh-wrapper/pkg/iroh_wrapper");
+      const secretKeyEncoded = localStorage.getItem("secret-key");
+      let endpoint;
+      if (secretKeyEncoded === null) {
+        endpoint = await Endpoint.new();
+        const secretKey = endpoint.secret_key();
+        // @ts-ignore
+        localStorage.setItem("secret-key", secretKey.toBase64());
+      } else {
+        // @ts-ignore
+        const secretKey = Uint8Array.fromBase64(secretKeyEncoded);
+        endpoint = await Endpoint.new_with_secret_key(secretKey);
+      }
+      setEndpoint(endpoint);
+      await endpoint.initialized();
+      setInitialized(true);
+    })();
+  }, []);
+
+  if (endpoint === undefined) {
+    return <Loading />;
+  }
+
+  return (
+    <div>
+      <h3>Node ID: {endpoint.node_id()}</h3>
+      <p>Initialized: {initialized ? "true" : "false"}</p>
     </div>
   );
 }

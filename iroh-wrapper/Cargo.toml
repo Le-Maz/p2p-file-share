@@ -1,0 +1,15 @@
+[package]
+name = "iroh-wrapper"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1.0.99"
+getrandom = { version = "0.3.3", features = ["wasm_js"] }
+iroh = "0.91.2"
+wasm-bindgen = "0.2.103"
+wasm-bindgen-futures = "0.4.53"
